@@ -1,0 +1,5 @@
+{
+  "npub": "npub1qde93eqzscgh2l5v38gyusp5a5fknk00azfck0d34jrv2m7jvzkjxhrmmmd",
+  "nsec": "nsec1eu2lqeg6j85k5r3uwss8c5ddzxfwtc0t02vc2t7vqxhp0yztacrqvax73v",
+  "_note": "Public, shared demo key for SDK exploration. Worthless for real value. Throws DEMO_KEY_DISABLED in production. Anyone with this file can sign events as this npub — that's the design."
+}

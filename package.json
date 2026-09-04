@@ -1,0 +1,23 @@
+{
+  "name": "voyager-sdk",
+  "version": "0.1.0",
+  "description": "Voyager Protocol SDK — Nostr-native, Lightning, Mostro. Lean. No AI. No telemetry.",
+  "type": "module",
+  "main": "./voyager.js",
+  "exports": {
+    ".": "./voyager.js"
+  },
+  "files": ["voyager.js", "demo.js", "demo-key.json", "README.md", "LICENSE"],
+  "scripts": {
+    "demo": "node demo.js"
+  },
+  "dependencies": {
+    "@noble/curves": "^1.7.0",
+    "@noble/hashes": "^1.6.1"
+  },
+  "keywords": ["voyager", "nostr", "lightning", "mostro", "bitcoin", "caribbean", "nwc", "nips"],
+  "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  }
+}
