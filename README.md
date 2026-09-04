@@ -29,11 +29,11 @@ voyager.config({
   timeout: 10000,
 });
 
-// The shared demo key — for exploration only. Throws DEMO_KEY_DISABLED in prod.
+// The shared demo key — for exploration only.
 const me = await voyager.demoKey();
 
-// Or import your own nsec (from a hardware signer, NIP-46 remote signer, etc.)
-const me = await voyager.fromNsec("nsec1...");
+// Or import your own nsec (from a hardware signer, NIP-46 remote signer, etc.):
+// const me = await voyager.fromNsec("nsec1...");
 
 // Create a listing (kind 30402)
 const listing = await voyager.listing({
