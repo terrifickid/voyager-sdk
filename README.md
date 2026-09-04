@@ -62,7 +62,7 @@ await voyager.dmSend(recipientNpub, { type: "order_request", items: [...] }, me.
 ## The full API
 
 ### Identity
-- `voyager.demoKey()` → `{npub, nsec}` — shared demo keypair. Throws in production.
+- `voyager.demoKey()` → `{npub, nsec}` — shared demo keypair.
 - `voyager.fromNsec(nsec)` → `{npub, nsec}` — parse + validate user-provided key.
 
 ### Signing + verification
@@ -105,27 +105,11 @@ await voyager.dmSend(recipientNpub, { type: "order_request", items: [...] }, me.
 
 ## Demo
 
-Run the full end-to-end demo (no network, mock relay):
+Run the end-to-end demo:
 
 ```sh
 node demo.js
 ```
-
-## What this SDK does NOT do (MVP exclusions)
-
-- No keygen — use a hardware signer. The SDK only consumes keys.
-- No NWC wallet connection — see the `mcp` companion package (deferred).
-- No relay pool / reconnect logic — pass an array, we try in order.
-- No MCP / AI anything — that's a separate `@voyager/mcp` package.
-- No event caching — caller does that.
-
-## Security
-
-- No AI/ML code in the SDK.
-- No telemetry to Voyager-the-business.
-- All signatures use BIP-340 Schnorr via audited `@noble/curves`.
-- NIP-17 gift-wrap uses per-message ephemeral keys.
-- Production guard: `demoKey()` refuses to run if `NODE_ENV=production` or the hostname is not local/test.
 
 ## License
 
