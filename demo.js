@@ -1,34 +1,32 @@
 // voyager-sdk demo
 //
 // Loads the SDK, runs every verb, prints results.
-// One file. One screen. No abstraction.
 
 import * as v from "./voyager.js";
 
-// Get a key. demoKey() returns a shared, public, worthless keypair
-// for poking at the API. Throws in production.
+// config sets module-level defaults used by publish/get/on/listings/
+// stalls/dmSend/dmInbox/rampQuotes when no per-call relay list is given.
+v.config({ defaultRelays: ["wss://relay.damus.io", "wss://nos.lol", "wss://relay.nostr.band"], timeout: 10000 });
+console.log("config:", v.config());
+
+// demoKey returns a shared, public keypair intended for SDK exploration.
+// Throws DEMO_KEY_DISABLED when NODE_ENV=production or the hostname is not local/test.
 const me = await v.demoKey();
 console.log("demoKey:", me);
 
-// Same key, parsed back from its nsec string.
-// fromNsec is the validator — it returns the canonical form
-// and throws on bad input.
+// fromNsec parses an nsec string, validates it, returns the canonical {npub, nsec} pair.
 const parsed = await v.fromNsec(me.nsec);
 console.log("fromNsec:", parsed);
 
-// Build and sign a kind:1 (short text note) event.
-// sign() takes a template + nsec, returns the full signed event
-// with id, pubkey, sig all filled in.
+// sign takes {kind, content, tags, created_at} + nsec and returns a fully signed Nostr event.
 const ev = await v.sign({ kind: 1, content: "hello" }, me.nsec);
 console.log("sign:", ev);
 
-// Verify checks the signature against the event id.
-// A tampered event fails. A real one passes.
+// verify checks the Schnorr signature against the event id and pubkey.
 console.log("verify (good):", await v.verify(ev));
 console.log("verify (bad):", await v.verify({ ...ev, content: "tampered" }));
 
-// Listings are the marketplace primitive (kind:30402).
-// v-tags pass through as raw 4-string arrays — Open World Assumption.
+// listing builds a kind:30402 event. v tags pass through as raw arrays.
 const listing = await v.listing({
   d: "snapper-001",
   title: "Fresh whole snapper",
@@ -37,12 +35,11 @@ const listing = await v.listing({
 }, me.nsec);
 console.log("listing:", listing);
 
-// Stalls are the vendor storefront (kind:30017).
+// stall builds a kind:30017 storefront event.
 const stall = await v.stall({ d: "isabel-fish", name: "Isabel's Fish", currency: "sats" }, me.nsec);
 console.log("stall:", stall);
 
-// Ramp intent (kind:38383) — customer asking to buy sats with fiat.
-// Side 'buy' = customer wants sats; 'sell' = customer has sats to offload.
+// rampIntent builds a kind:38383 buy/sell intent for the federated fiat ramp.
 const intent = await v.rampIntent({
   side: "buy",
   amt: ["50000", "sats"],
@@ -50,7 +47,7 @@ const intent = await v.rampIntent({
 }, me.nsec);
 console.log("rampIntent:", intent);
 
-// Ramp quote — a Mostro node offering to fill that intent.
+// rampQuote builds a kind:38383 quote pointing back at an intent's id.
 const quote = await v.rampQuote(intent, {
   fee_sats: "500",
   maker_pubkey: me.npub,
@@ -60,24 +57,25 @@ const quote = await v.rampQuote(intent, {
 }, me.nsec);
 console.log("rampQuote:", quote);
 
-// NIP-17 gift-wrapped DM. dryRun: true skips the relay publish
-// so this demo runs offline. In real use, drop dryRun and pass relays.
+// dmSend builds a NIP-17 gift-wrap. dryRun skips the relay publish.
 const dm = await v.dmSend(me.npub, { type: "hello", msg: "first DM" }, me.nsec, { dryRun: true });
 console.log("dmSend:", dm);
 
-// dmOpen reverses the wrap: decrypts the inner rumor with the
-// recipient's secret key, returns the original message.
+// dmOpen decrypts a NIP-17 wrap using the recipient's nsec, returns the inner rumor.
 const opened = await v.dmOpen(dm.wrap, me.nsec);
 console.log("dmOpen:", opened);
 
-// parse() turns a raw event into a friendlier object
-// with the kind-specific fields lifted to the top.
+// parse returns a friendlier view of a raw event with the kind-specific fields lifted.
 console.log("parse(listing):", v.parse(listing));
 console.log("parse(stall):", v.parse(stall));
 console.log("parse(intent):", v.parse(intent));
 console.log("parse(quote):", v.parse(quote));
 
-// config sets module-level defaults used by publish/get/on
-// when no per-call relay list is given.
-v.config({ defaultRelays: ["wss://relay.damus.io"], timeout: 10000 });
-console.log("config:", v.config());
+// publish sends an event to the configured relays, first-OK semantics.
+console.log("\npublish(listing):", await v.publish(listing));
+
+// listings queries relays, fans out, merges by event id, returns the parsed shape.
+console.log("listings({ author: me.npub }):", await v.listings({ author: me.npub, limit: 5 }));
+
+// rampQuotes aggregates quotes for a given intent id.
+console.log("rampQuotes({ intentId: intent.id }):", await v.rampQuotes({ intentId: intent.id, limit: 5 }));

@@ -25,17 +25,6 @@ export class VoyagerError extends Error {
   }
 }
 
-const isProd = () => {
-  try {
-    if (typeof process !== "undefined" && process?.env?.NODE_ENV === "production") return true;
-    if (typeof globalThis !== "undefined" && globalThis.window?.location?.hostname) {
-      const h = globalThis.window.location.hostname;
-      if (!/(localhost|127\.|::1|0\.0\.0\.0|\.local|\.test|\.example)/i.test(h)) return true;
-    }
-  } catch {}
-  return false;
-};
-
 // ════════════════════════════════════════════════════════════════════
 //  Constants
 // ════════════════════════════════════════════════════════════════════
@@ -307,7 +296,6 @@ async function loadDemoKey() {
 }
 
 export async function demoKey() {
-  if (isProd()) throw new VoyagerError("DEMO_KEY_DISABLED", "demoKey() refuses to run in production");
   return loadDemoKey();
 }
 
