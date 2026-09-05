@@ -8,20 +8,16 @@ NIPs used:      NIP-01 (events), NIP-19 (bech32), NIP-44 (encryption), NIP-17 (g
 
 ## Install
 
-```sh
-npm install voyager-sdk
-```
-
-Or for SvelteKit/Node:
+Drop `voyager.js` into your project and import it:
 
 ```js
-import * as voyager from "voyager-sdk";
+import * as voyager from "./voyager.js";
 ```
 
 ## Quick start
 
 ```js
-import * as voyager from "voyager-sdk";
+import * as voyager from "./voyager.js";
 
 // Configure once at app entry (optional)
 voyager.config({
