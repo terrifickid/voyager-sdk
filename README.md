@@ -21,8 +21,8 @@ import * as voyager from "./voyager.js";
 
 // Configure once at app entry (optional)
 voyager.config({
-  defaultRelays: ["wss://relay.damus.io", "wss://nos.lol", "wss://relay.nostr.band"],
-  timeout: 10000,
+  defaultRelays: ["wss://nostr.wine", "wss://relay.primal.net", "wss://nostr.mom"],
+  timeout: 4000,
 });
 
 // The shared demo key — for exploration only.
