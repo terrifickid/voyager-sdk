@@ -6,7 +6,7 @@ import * as v from "./voyager.js";
 
 // config sets module-level defaults used by publish/get/on/listings/
 // stalls/dmSend/dmInbox/rampQuotes when no per-call relay list is given.
-v.config({ defaultRelays: ["wss://relay.damus.io", "wss://nos.lol", "wss://relay.nostr.band"], timeout: 10000 });
+v.config({ defaultRelays: ["wss://nostr.wine", "wss://relay.primal.net", "wss://nostr.mom"], timeout: 4000 });
 console.log("config:", v.config());
 
 // demoKey returns a shared, public keypair intended for SDK exploration.
@@ -72,7 +72,15 @@ console.log("parse(intent):", v.parse(intent));
 console.log("parse(quote):", v.parse(quote));
 
 // publish sends an event to the configured relays, first-OK semantics.
-console.log("\npublish(listing):", await v.publish(listing));
+try {
+  console.log("\npublish(listing):", await v.publish(listing));
+} catch (err) {
+  console.log("\npublish(listing) FAILED:");
+  console.log("  message:", err?.message);
+  console.log("  cause:", err?.cause);
+  console.log("  config:", v.config());
+  throw err;
+}
 
 // listings queries relays, fans out, merges by event id, returns the parsed shape.
 console.log("listings({ author: me.npub }):", await v.listings({ author: me.npub, limit: 5 }));

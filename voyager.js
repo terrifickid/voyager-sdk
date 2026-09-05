@@ -18,10 +18,11 @@
 // ════════════════════════════════════════════════════════════════════
 
 export class VoyagerError extends Error {
-  constructor(code, message) {
+  constructor(code, message, cause) {
     super(message);
     this.name = "VoyagerError";
     this.code = code;
+    if (cause !== undefined) this.cause = cause;
   }
 }
 
@@ -348,7 +349,7 @@ export async function sign(template, nsec) {
   const pub = pubkeyFromSk(sk);
 
   const ev = {
-    pubkey: npubEncode(pub.slice(1)),  // x-only 32 bytes (Nostr convention)
+    pubkey: bytesToHex(pub.slice(1)),  // x-only 32 bytes hex (NIP-01)
     created_at: template.created_at ?? Math.floor(Date.now() / 1000),
     kind: template.kind,
     tags: Array.isArray(template.tags) ? template.tags.map(t => Array.isArray(t) ? t.slice() : [String(t)]) : [],
@@ -370,7 +371,7 @@ export async function verify(event) {
   if (recomputed !== id) return false;
   let pubBytes;
   try {
-    pubBytes = decodeNip19("npub", pubkey);
+    pubBytes = typeof pubkey === "string" && /^[0-9a-f]{64}$/i.test(pubkey) ? hexToBytes(pubkey) : decodeNip19("npub", pubkey);
   } catch { return false; }
   if (pubBytes.length !== 32) return false;
   try {
@@ -569,7 +570,7 @@ export async function dmSend(toNpub, payload, nsec, opts = {}) {
 
   // Build kind:1059 wrap event signed by ephemeral key
   const ev = {
-    pubkey: npubEncode(epPubXOnly),
+    pubkey: bytesToHex(epPubXOnly),
     created_at: Math.floor(Date.now() / 1000) - Math.floor(Math.random() * 86400), // random offset for unlinkability
     kind: 1059,
     tags: [["p", toNpub]],
@@ -581,17 +582,16 @@ export async function dmSend(toNpub, payload, nsec, opts = {}) {
   ev.sig = bytesToHex(sig);
 
   if (!opts.dryRun) {
-    await publish(resolveRelays(opts.relays), ev);
+    await publish(ev, opts.relays);
   }
   return { id: ev.id, wrap: ev };
 }
 
 export async function dmOpen(giftwrap, nsec) {
   if (!giftwrap || giftwrap.kind !== 1059) return null;
-  // giftwrap.pubkey is x-only 32 bytes; npubEncode prefixes by adding 0x02 prefix implicitly? No:
-  // npubEncode expects 32 bytes (x-only). But pubkey field on Nostr events is x-only form.
-  const epPubXOnly = decodeNip19("npub", giftwrap.pubkey); // 32 bytes
-  const fromNpub = giftwrap.pubkey;
+  // giftwrap.pubkey is x-only 32-byte hex (NIP-01)
+  const epPubXOnly = hexToBytes(giftwrap.pubkey); // 32 bytes
+  const fromNpub = npubEncode(epPubXOnly);
   // Find the `p` tag (intended recipient)
   const pTag = (giftwrap.tags || []).find(t => Array.isArray(t) && t[0] === "p");
   if (!pTag) return null;
@@ -606,7 +606,7 @@ export async function dmOpen(giftwrap, nsec) {
   const rumor = { pubkey, created_at, kind, tags, content };
   let payload = null;
   try { payload = JSON.parse(content); } catch { payload = content; }
-  return { fromNpub: pubkey, rumor: { ...rumor, payload } };
+  return { fromNpub: npubEncode(hexToBytes(pubkey)), rumor: { ...rumor, payload } };
 }
 
 export async function dmInbox(nsec, opts = {}) {
@@ -794,7 +794,7 @@ function pubOnce(url, event, timeoutMs) {
         if (m[0] === "OK" && m[1] === event.id) {
           finish();
           if (m[2]) resolve({ ok: true, relay: url });
-          else reject(new VoyagerError("RELAY_ERROR", `relay rejected: ${m[2] ?? "?"}`));
+          else reject(new VoyagerError("RELAY_REJECTED", `relay rejected: ${m[3] ?? "no reason given"} (${url})`));
         } else if (m[0] === "NOTICE") {
           // ignore
         }
@@ -804,19 +804,25 @@ function pubOnce(url, event, timeoutMs) {
   });
 }
 
-export async function publish(relaysArg, event) {
+export async function publish(event, relaysArg) {
+  if (!event || typeof event !== "object" || !event.id || !event.sig) {
+    throw new VoyagerError("INVALID_EVENT", "publish requires a signed event");
+  }
   const relays = resolveRelays(relaysArg);
   if (relays.length === 0) throw new VoyagerError("RELAY_ERROR", "no relays configured");
-  let lastErr;
+  const errors = [];
   for (const r of relays) {
     try {
       const res = await pubOnce(relayUrl(r), event, CONFIG.timeout);
       return res;
     } catch (e) {
-      lastErr = e;
+      errors.push({ relay: r, error: e });
     }
   }
-  throw new VoyagerError("RELAY_ERROR", `all relays failed`, lastErr);
+  const summary = errors.map(({ relay, error }) =>
+    `${relay}: ${error?.code ?? "?"} ${error?.message ?? String(error)}`
+  ).join(" | ");
+  throw new VoyagerError("RELAY_ERROR", `all relays failed — ${summary}`, errors);
 }
 
 // Subscription: real-time, fan-out across relays, dedup by event id.

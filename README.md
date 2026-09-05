@@ -42,6 +42,8 @@ const listing = await voyager.listing({
 // Publish to the configured relays
 await voyager.publish(listing);
 
+// Signature: `publish(event, relays?)` — relays default to `config().defaultRelays`.
+
 // Read listings — fans out across relays, merges by event id
 const listings = await voyager.listings({ author: someVendorNpub });
 
@@ -88,7 +90,7 @@ await voyager.dmSend(recipientNpub, { type: "order_request", items: [...] }, me.
 - `voyager.rampQuotes({ intentId, relays, timeout })` → `[quoteEvent]`
 
 ### Relay transport
-- `voyager.publish(relays, event)` → `{ok, relay}` — first-OK
+- `voyager.publish(event, relays?)` → `{ok, relay}` — first-OK
 - `voyager.get(relays, filter)` → event | null
 - `voyager.listings(...)`, `voyager.stalls(...)`, `voyager.rampQuotes(...)` — typed reads
 - `voyager.on(filter, callback)` → `unsub()` — realtime subscription
