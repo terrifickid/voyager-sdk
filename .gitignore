@@ -1,0 +1,17 @@
+# deps
+node_modules/
+
+# env / secrets
+.env
+.env.*
+
+# editor / OS noise
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*~
+
+# kilo plans (per-project scratch, not for upstream)
+.kilo/

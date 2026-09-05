@@ -72,7 +72,7 @@ await voyager.dmSend(recipientNpub, { type: "order_request", items: [...] }, me.
 ### Listings (kind 30402)
 - `voyager.listing(input, nsec)` → signed event
 - `voyager.updateListing(d, patch, nsec)` → signed event (replaces)
-- `voyager.listings({ relays, author, d, kinds, timeout })` → `[{d, title, price, v, event}]`
+- `voyager.listings({ relays, author, d, kinds, timeout })` → `[{d, title, price, v, event}]` — sorted newest first by `created_at`. Note: a `limit` option is **not** supported by the MVP `get()` and is silently ignored.
 
 ### Stalls (kind 30017)
 - `voyager.stall(input, nsec)` → signed event
@@ -82,12 +82,12 @@ await voyager.dmSend(recipientNpub, { type: "order_request", items: [...] }, me.
 ### DMs (NIP-17)
 - `voyager.dmSend(toNpub, payload, nsec, { relays, dryRun? })` → `{id, wrap}`
 - `voyager.dmOpen(giftwrap, nsec)` → `{fromNpub, rumor}` or null
-- `voyager.dmInbox(nsec, { relays, since, until, limit })` → `[{fromNpub, rumor, giftwrap}]`
+- `voyager.dmInbox(nsec, { relays, since, until, limit })` → `[{fromNpub, rumor, giftwrap, openedAt}]`
 
 ### Ramp (kind 38383)
 - `voyager.rampIntent({ side, amt, fiat, method?, z? }, nsec)` → signed intent
 - `voyager.rampQuote(intentOrId, quote, nsec)` → signed quote
-- `voyager.rampQuotes({ intentId, relays, timeout })` → `[quoteEvent]`
+- `voyager.rampQuotes({ intentId, relays, timeout })` → `[{event}]` — use `parse(e.event)` to get the typed `ramp` block.
 
 ### Relay transport
 - `voyager.publish(event, relays?)` → `{ok, relay}` — first-OK
@@ -97,7 +97,7 @@ await voyager.dmSend(recipientNpub, { type: "order_request", items: [...] }, me.
 - `voyager.config({ defaultRelays, timeout })` — set module-level defaults
 
 ### Misc
-- `voyager.parse(event)` → `{kind, author, kindX: {...}, event}` — parsed view
+- `voyager.parse(event)` → `{event, kind, author, created_at, listing|stall|ramp}` — parsed view. The kind-specific block is keyed by the kind (e.g. `listing` for kind 30402).
 - `voyager.npubEncode(pubBytes)`, `voyager.nsecEncode(skBytes)` — NIP-19 encoders
 - `voyager.VoyagerError` — typed error with `.code`
 
